@@ -1,5 +1,5 @@
 {
-  "name": "react-dates-21.8.0-gte-react-17",
+  "name": "react-dates-gte-react-17-21.8.0-version-fixed",
   "version": "21.8.0",
   "description": "A responsive and accessible date range picker component built with React. Fork for React 17 and React 18 with fixed version 2.8.0",
   "main": "index.js",
