@@ -3,15 +3,17 @@ import moment from 'moment/min/moment-with-locales';
 import { expect } from 'chai';
 import sinon from 'sinon-sandbox';
 import { mount, shallow } from 'enzyme';
+import { cloneDeep } from 'lodash';
 
 import * as isDayVisible from '../../src/utils/isDayVisible';
 import isSameMonth from '../../src/utils/isSameMonth';
 
-import DayPicker, { PureDayPicker } from '../../src/components/DayPicker';
+import DayPicker, { PureDayPicker, defaultProps as DayPickerDefaultProps } from '../../src/components/DayPicker';
 import CalendarMonthGrid from '../../src/components/CalendarMonthGrid';
 import DayPickerNavigation from '../../src/components/DayPickerNavigation';
 import DayPickerKeyboardShortcuts from '../../src/components/DayPickerKeyboardShortcuts';
 import {
+  DAY_SIZE,
   HORIZONTAL_ORIENTATION,
   VERTICAL_ORIENTATION,
   VERTICAL_SCROLLABLE,
@@ -22,8 +24,9 @@ const today = moment().locale('en');
 const event = { preventDefault() {}, stopPropagation() {} };
 
 describe('DayPicker', () => {
+  let adjustDayPickerHeightSpy;
   beforeEach(() => {
-    sinon.stub(PureDayPicker.prototype, 'adjustDayPickerHeight');
+    adjustDayPickerHeightSpy = sinon.stub(PureDayPicker.prototype, 'adjustDayPickerHeight');
   });
 
   afterEach(() => {
@@ -294,6 +297,58 @@ describe('DayPicker', () => {
           const arg = maybeTransitionPrevMonthSpy.getCall(0).args[0];
           expect(arg.isSame(oneDayBefore, 'day')).to.equal(true);
         });
+
+        it('arg is end of previous month', () => {
+          const startOfThisMonth = today.clone().startOf('month');
+          const endOfPrevMonth = startOfThisMonth.clone().subtract(1, 'day');
+
+          const maybeTransitionPrevMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionPrevMonth');
+          const wrapper = shallow(<DayPicker />).dive();
+          wrapper.setState({
+            focusedDate: startOfThisMonth,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowLeft' });
+          const arg = maybeTransitionPrevMonthSpy.getCall(0).args[0];
+          expect(arg.isSame(endOfPrevMonth, 'day')).to.equal(true);
+        });
+      });
+
+      describe('ArrowLeft -- RTL', () => {
+        it('calls maybeTransitionNextMonth', () => {
+          const maybeTransitionNextMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionNextMonth');
+          const wrapper = shallow(<DayPicker isRTL />).dive();
+          wrapper.setState({
+            focusedDate: today,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowLeft' });
+          expect(maybeTransitionNextMonthSpy.callCount).to.equal(1);
+        });
+
+        it('arg is 1 day after focusedDate', () => {
+          const oneDayAfter = today.clone().add(1, 'day');
+          const maybeTransitionNextMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionNextMonth');
+          const wrapper = shallow(<DayPicker isRTL />).dive();
+          wrapper.setState({
+            focusedDate: today,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowLeft' });
+          const arg = maybeTransitionNextMonthSpy.getCall(0).args[0];
+          expect(arg.isSame(oneDayAfter, 'day')).to.equal(true);
+        });
+
+        it('arg is start of next month', () => {
+          const endOfThisMonth = today.clone().endOf('month');
+          const startOfNextMonth = endOfThisMonth.clone().add(1, 'day');
+
+          const maybeTransitionNextMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionNextMonth');
+          const wrapper = shallow(<DayPicker isRTL />).dive();
+          wrapper.setState({
+            focusedDate: endOfThisMonth,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowLeft' });
+          const arg = maybeTransitionNextMonthSpy.getCall(0).args[0];
+          expect(arg.isSame(startOfNextMonth, 'day')).to.equal(true);
+        });
       });
 
       describe('Home', () => {
@@ -389,6 +444,58 @@ describe('DayPicker', () => {
           wrapper.instance().onKeyDown({ ...event, key: 'ArrowRight' });
           const arg = maybeTransitionNextMonthSpy.getCall(0).args[0];
           expect(arg.isSame(oneDayAfter, 'day')).to.equal(true);
+        });
+
+        it('arg is start of next  month', () => {
+          const endOfThisMonth = today.clone().endOf('month');
+          const startOfNextMonth = endOfThisMonth.clone().add(1, 'day');
+
+          const maybeTransitionNextMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionNextMonth');
+          const wrapper = shallow(<DayPicker />).dive();
+          wrapper.setState({
+            focusedDate: endOfThisMonth,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowRight' });
+          const arg = maybeTransitionNextMonthSpy.getCall(0).args[0];
+          expect(arg.isSame(startOfNextMonth, 'day')).to.equal(true);
+        });
+      });
+
+      describe('ArrowRight -- RTL', () => {
+        it('calls maybeTransitionPrevMonth', () => {
+          const maybeTransitionPrevMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionPrevMonth');
+          const wrapper = shallow(<DayPicker isRTL />).dive();
+          wrapper.setState({
+            focusedDate: today,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowRight' });
+          expect(maybeTransitionPrevMonthSpy.callCount).to.equal(1);
+        });
+
+        it('arg is 1 day before focusedDate', () => {
+          const oneDayBefore = today.clone().subtract(1, 'day');
+          const maybeTransitionPrevMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionPrevMonth');
+          const wrapper = shallow(<DayPicker isRTL />).dive();
+          wrapper.setState({
+            focusedDate: today,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowRight' });
+          const arg = maybeTransitionPrevMonthSpy.getCall(0).args[0];
+          expect(arg.isSame(oneDayBefore, 'day')).to.equal(true);
+        });
+
+        it('arg is end of previous month', () => {
+          const startOfThisMonth = today.clone().startOf('month');
+          const endOfPrevMonth = startOfThisMonth.clone().subtract(1, 'day');
+
+          const maybeTransitionPrevMonthSpy = sinon.spy(PureDayPicker.prototype, 'maybeTransitionPrevMonth');
+          const wrapper = shallow(<DayPicker isRTL />).dive();
+          wrapper.setState({
+            focusedDate: startOfThisMonth,
+          });
+          wrapper.instance().onKeyDown({ ...event, key: 'ArrowRight' });
+          const arg = maybeTransitionPrevMonthSpy.getCall(0).args[0];
+          expect(arg.isSame(endOfPrevMonth, 'day')).to.equal(true);
         });
       });
 
@@ -603,6 +710,21 @@ describe('DayPicker', () => {
       const wrapper = shallow(<DayPicker />).dive();
       wrapper.instance().onPrevMonthTransition(test);
       expect(wrapper.state().nextFocusedDate).to.equal(test);
+    });
+  });
+
+  describe('monthTitleHeight', () => {
+    it('change monthTitleHeight correctly with setMonthTitleHeight', () => {
+      const wrapper = shallow(<DayPicker />).dive();
+      wrapper.instance().setMonthTitleHeight(80);
+      expect(wrapper.state().monthTitleHeight).to.equal(80);
+    });
+
+    it('do not change monthTitleHeight with renderMonthText === prevRenderMonthText', () => {
+      const wrapper = shallow(<DayPicker renderMonthText={() => 'foo'} />).dive();
+      wrapper.instance().setMonthTitleHeight(80);
+      wrapper.setProps({ renderMonthText: () => 'foo' });
+      expect(wrapper.state().monthTitleHeight).to.equal(80);
     });
   });
 
@@ -892,13 +1014,25 @@ describe('DayPicker', () => {
     });
   });
 
-  describe.skip('life cycle methods', () => {
-    let adjustDayPickerHeightSpy;
-    beforeEach(() => {
-      adjustDayPickerHeightSpy = sinon.stub(PureDayPicker.prototype, 'adjustDayPickerHeight');
-    });
+  describe('#getWeekHeaders', () => {
+    it('returns unmutated weekday headers for currentMonth in a future', () => {
+      sinon.stub(PureDayPicker.prototype, 'render').returns(null);
 
-    describe('#componentDidMount', () => {
+      const getWeekHeadersSpy = sinon.spy(PureDayPicker.prototype, 'getWeekHeaders');
+      const INITIAL_MONTH = moment().add(2, 'Months').week(3).weekday(3);
+      const wrapper = shallow(<DayPicker initialVisibleMonth={() => INITIAL_MONTH} />).dive();
+      const instance = wrapper.instance();
+      const state = cloneDeep(wrapper.state());
+
+      expect(instance.getWeekHeaders()).to.be.eql(INITIAL_MONTH.localeData().weekdaysMin());
+      expect(instance.state).not.to.equal(state);
+      expect(instance.state).to.eql(state);
+      expect(getWeekHeadersSpy).to.have.property('callCount', 1);
+    });
+  });
+
+  describe('life cycle methods', () => {
+    describe.skip('#componentDidMount', () => {
       describe('props.orientation === HORIZONTAL_ORIENTATION', () => {
         it('calls adjustDayPickerHeight', () => {
           mount(<DayPicker orientation={HORIZONTAL_ORIENTATION} />);
@@ -906,20 +1040,20 @@ describe('DayPicker', () => {
         });
 
         it('does not update state.currentMonthScrollTop', () => {
-          sinon.spy(DayPicker.prototype, 'setTransitionContainerRef');
+          sinon.spy(PureDayPicker.prototype, 'setTransitionContainerRef');
           const wrapper = mount(<DayPicker orientation={HORIZONTAL_ORIENTATION} />);
           expect(wrapper.state().currentMonthScrollTop).to.equal(null);
         });
       });
 
-      describe('props.orientation === VERTICAL_ORIENTATION', () => {
+      describe.skip('props.orientation === VERTICAL_ORIENTATION', () => {
         it('does not call adjustDayPickerHeight', () => {
           mount(<DayPicker orientation={VERTICAL_ORIENTATION} />);
           expect(adjustDayPickerHeightSpy.called).to.equal(false);
         });
 
         it('does not update state.currentMonthScrollTop', () => {
-          sinon.spy(DayPicker.prototype, 'setTransitionContainerRef');
+          sinon.spy(PureDayPicker.prototype, 'setTransitionContainerRef');
           const wrapper = mount(<DayPicker orientation={VERTICAL_ORIENTATION} />);
           expect(wrapper.state().currentMonthScrollTop).to.equal(null);
         });
@@ -927,7 +1061,7 @@ describe('DayPicker', () => {
 
       describe('props.orientation === VERTICAL_SCROLLABLE', () => {
         it('updates state.currentMonthScrollTop', () => {
-          sinon.spy(DayPicker.prototype, 'setTransitionContainerRef');
+          sinon.spy(PureDayPicker.prototype, 'setTransitionContainerRef');
           const wrapper = mount(<DayPicker orientation={VERTICAL_SCROLLABLE} />);
           expect(wrapper.state().currentMonthScrollTop).to.not.equal(null);
         });
@@ -937,7 +1071,7 @@ describe('DayPicker', () => {
     describe('#UNSAFE_componentWillReceiveProps', () => {
       describe('props.orientation === VERTICAL_SCROLLABLE', () => {
         it('updates state.currentMonthScrollTop', () => {
-          sinon.spy(DayPicker.prototype, 'setTransitionContainerRef');
+          sinon.spy(PureDayPicker.prototype, 'setTransitionContainerRef');
           const wrapper = mount(<DayPicker orientation={VERTICAL_SCROLLABLE} />);
           const prevCurrentMonthScrollTop = wrapper.state().currentMonthScrollTop;
           wrapper.setState({
@@ -947,19 +1081,70 @@ describe('DayPicker', () => {
           expect(wrapper.state().currentMonthScrollTop).to.not.equal(prevCurrentMonthScrollTop);
         });
       });
+
+      describe('props.date changed', () => {
+        const props = {
+          ...DayPickerDefaultProps,
+          onDateChange() {},
+          onFocusChange() {},
+          initialVisibleMonth() { return today; },
+          theme: { reactDates: { spacing: {} } },
+          styles: {},
+          css() {},
+        };
+
+        describe('date is not visible', () => {
+          it('setState gets called with new month', () => {
+            sinon.stub(isDayVisible, 'default').returns(false);
+            const date = today;
+            const newDate = date.clone().add(1, 'month');
+            const wrapper = shallow(<PureDayPicker {...props} date={date} />);
+            expect(wrapper.state().currentMonth).to.eql(date);
+            wrapper.instance().componentWillReceiveProps(
+              {
+                ...props,
+                date: newDate,
+                initialVisibleMonth() { return newDate; },
+              },
+              {},
+            );
+            expect(wrapper.state().currentMonth).to.eql(newDate);
+          });
+        });
+
+        describe('date is visible', () => {
+          it('setState gets called with existing month', () => {
+            sinon.stub(isDayVisible, 'default').returns(true);
+            const date = today;
+            const newDate = date.clone().add(1, 'month');
+            const wrapper = shallow(<PureDayPicker {...props} date={date} />);
+            expect(wrapper.state().currentMonth).to.eql(date);
+            wrapper.instance().componentWillReceiveProps(
+              {
+                ...props,
+                date: newDate,
+                initialVisibleMonth() { return newDate; },
+              },
+              {},
+            );
+            expect(wrapper.state().currentMonth).to.eql(date);
+          });
+        });
+      });
     });
 
     describe('#componentDidUpdate', () => {
       let updateStateAfterMonthTransitionSpy;
+
       beforeEach(() => {
         updateStateAfterMonthTransitionSpy = sinon.stub(
-          DayPicker.prototype,
+          PureDayPicker.prototype,
           'updateStateAfterMonthTransition',
         );
       });
 
       describe('props.orientation === HORIZONTAL_ORIENTATION', () => {
-        it('calls adjustDayPickerHeight if state.monthTransition is truthy', () => {
+        it.skip('calls adjustDayPickerHeight if state.monthTransition is truthy', () => {
           const wrapper = mount(<DayPicker orientation={HORIZONTAL_ORIENTATION} />);
           wrapper.setState({
             monthTransition: 'foo',
@@ -967,7 +1152,7 @@ describe('DayPicker', () => {
           expect(adjustDayPickerHeightSpy).to.have.property('callCount', 2);
         });
 
-        it('does not call adjustDayPickerHeight if state.monthTransition is falsy', () => {
+        it.skip('does not call adjustDayPickerHeight if state.monthTransition is falsy', () => {
           const wrapper = mount(<DayPicker orientation={HORIZONTAL_ORIENTATION} />);
           wrapper.setState({
             monthTransition: null,
@@ -975,7 +1160,7 @@ describe('DayPicker', () => {
           expect(adjustDayPickerHeightSpy.calledTwice).to.equal(false);
         });
 
-        it('calls adjustDayPickerHeight if orientation has changed from HORIZONTAL_ORIENTATION to VERTICAL_ORIENTATION', () => {
+        it.skip('calls adjustDayPickerHeight if orientation has changed from HORIZONTAL_ORIENTATION to VERTICAL_ORIENTATION', () => {
           const wrapper = mount(<DayPicker orientation={HORIZONTAL_ORIENTATION} />);
           wrapper.setState({
             orientation: VERTICAL_ORIENTATION,
@@ -983,7 +1168,7 @@ describe('DayPicker', () => {
           expect(adjustDayPickerHeightSpy).to.have.property('callCount', 2);
         });
 
-        it('calls adjustDayPickerHeight if daySize has changed', () => {
+        it.skip('calls adjustDayPickerHeight if daySize has changed', () => {
           const wrapper = mount(<DayPicker daySize={39} orientation={HORIZONTAL_ORIENTATION} />);
           wrapper.setState({
             daySize: 40,
@@ -992,7 +1177,7 @@ describe('DayPicker', () => {
           expect(adjustDayPickerHeightSpy).to.have.property('callCount', 2);
         });
 
-        it('calls updateStateAfterMonthTransition if state.monthTransition is truthy', () => {
+        it.skip('calls updateStateAfterMonthTransition if state.monthTransition is truthy', () => {
           const wrapper = mount(<DayPicker orientation={HORIZONTAL_ORIENTATION} />);
           wrapper.setState({
             monthTransition: 'foo',
@@ -1000,16 +1185,36 @@ describe('DayPicker', () => {
           expect(updateStateAfterMonthTransitionSpy).to.have.property('callCount', 1);
         });
 
-        it('does not call updateStateAfterMonthTransition if state.monthTransition is falsy', () => {
+        it.skip('does not call updateStateAfterMonthTransition if state.monthTransition is falsy', () => {
           const wrapper = mount(<DayPicker orientation={HORIZONTAL_ORIENTATION} />);
           wrapper.setState({
             monthTransition: null,
           });
           expect(updateStateAfterMonthTransitionSpy.calledOnce).to.equal(false);
         });
+
+        it('calls adjustDayPickerHeightSpy if props.numberOfMonths changes', () => {
+          const wrapper = shallow(<DayPicker numberOfMonths={2} />).dive();
+          wrapper.instance().componentDidUpdate({
+            daySize: DAY_SIZE,
+            numberOfMonths: 3,
+            orientation: HORIZONTAL_ORIENTATION,
+          });
+          expect(adjustDayPickerHeightSpy.callCount).to.equal(1);
+        });
+
+        it('does not call adjustDayPickerHeightSpy if props.numberOfMonths does not change', () => {
+          const wrapper = shallow(<DayPicker numberOfMonths={2} />).dive();
+          wrapper.instance().componentDidUpdate({
+            daySize: DAY_SIZE,
+            numberOfMonths: 2,
+            orientation: HORIZONTAL_ORIENTATION,
+          });
+          expect(adjustDayPickerHeightSpy.called).to.equal(false);
+        });
       });
 
-      describe('props.orientation === VERTICAL_ORIENTATION', () => {
+      describe.skip('props.orientation === VERTICAL_ORIENTATION', () => {
         it('does not call adjustDayPickerHeight if state.monthTransition is truthy', () => {
           const wrapper = mount(<DayPicker orientation={VERTICAL_ORIENTATION} />);
           wrapper.setState({
@@ -1060,9 +1265,9 @@ describe('DayPicker', () => {
         });
       });
 
-      describe('props.orientation === VERTICAL_SCROLLABLE', () => {
+      describe.skip('props.orientation === VERTICAL_SCROLLABLE', () => {
         it('does not update transitionContainer ref`s scrollTop currentMonth stays the same', () => {
-          sinon.spy(DayPicker.prototype, 'setTransitionContainerRef');
+          sinon.spy(PureDayPicker.prototype, 'setTransitionContainerRef');
           const wrapper = mount(<DayPicker orientation={VERTICAL_SCROLLABLE} />);
           const prevScrollTop = wrapper.transitionContainer.scrollTop;
           wrapper.setState({
@@ -1072,7 +1277,7 @@ describe('DayPicker', () => {
         });
 
         it('updates transitionContainer ref`s scrollTop currentMonth changes', () => {
-          sinon.spy(DayPicker.prototype, 'setTransitionContainerRef');
+          sinon.spy(PureDayPicker.prototype, 'setTransitionContainerRef');
           const wrapper = mount(<DayPicker orientation={VERTICAL_SCROLLABLE} />);
           const prevScrollTop = wrapper.transitionContainer.scrollTop;
           wrapper.setState({
@@ -1082,7 +1287,7 @@ describe('DayPicker', () => {
         });
       });
 
-      describe('when isFocused is updated to true', () => {
+      describe.skip('when isFocused is updated to true', () => {
         const prevProps = { isFocused: false };
         const newProps = { isFocused: true };
 

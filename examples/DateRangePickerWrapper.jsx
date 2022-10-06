@@ -14,6 +14,7 @@ import {
   HORIZONTAL_ORIENTATION,
   ANCHOR_LEFT,
   NAV_POSITION_TOP,
+  OPEN_DOWN,
 } from '../src/constants';
 import isInclusivelyAfterDay from '../src/utils/isInclusivelyAfterDay';
 
@@ -57,6 +58,7 @@ const defaultProps = {
   block: false,
   small: false,
   regular: false,
+  autoComplete: 'off',
 
   // calendar presentation and interaction related props
   renderMonthText: null,
@@ -70,6 +72,7 @@ const defaultProps = {
   keepOpenOnDateSelect: false,
   reopenPickerOnClearDates: false,
   isRTL: false,
+  openDirection: OPEN_DOWN,
 
   // navigation related props
   navPosition: NAV_POSITION_TOP,

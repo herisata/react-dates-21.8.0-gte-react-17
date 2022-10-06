@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { forbidExtraProps, nonNegativeInteger } from 'airbnb-prop-types';
-import { css, withStyles, withStylesPropTypes } from 'react-with-styles';
+import { withStyles, withStylesPropTypes } from 'react-with-styles';
 
 import { SingleDatePickerInputPhrases } from '../defaultPhrases';
 import getPhrasePropTypes from '../utils/getPhrasePropTypes';
@@ -22,6 +22,8 @@ const propTypes = forbidExtraProps({
   children: PropTypes.node,
   placeholder: PropTypes.string,
   ariaLabel: PropTypes.string,
+  autoComplete: PropTypes.string,
+  titleText: PropTypes.string,
   displayValue: PropTypes.string,
   screenReaderMessage: PropTypes.string,
   focused: PropTypes.bool,
@@ -59,6 +61,8 @@ const defaultProps = {
   children: null,
   placeholder: 'Select Date',
   ariaLabel: undefined,
+  autoComplete: 'off',
+  titleText: undefined,
   displayValue: '',
   screenReaderMessage: '',
   focused: false,
@@ -97,6 +101,8 @@ function SingleDatePickerInput({
   children,
   placeholder,
   ariaLabel,
+  autoComplete,
+  titleText,
   displayValue,
   focused,
   isFocused,
@@ -125,6 +131,7 @@ function SingleDatePickerInput({
   small,
   regular,
   verticalSpacing,
+  css,
   styles,
 }) {
   const calendarIcon = customInputIcon || (
@@ -147,6 +154,7 @@ function SingleDatePickerInput({
       disabled={disabled}
       aria-label={phrases.focusStartDate}
       onClick={onFocus}
+      tabIndex="-1"
     >
       {calendarIcon}
     </button>
@@ -169,6 +177,8 @@ function SingleDatePickerInput({
         id={id}
         placeholder={placeholder}
         ariaLabel={ariaLabel}
+        autoComplete={autoComplete}
+        titleText={titleText}
         displayValue={displayValue}
         screenReaderMessage={screenReaderText}
         focused={focused}

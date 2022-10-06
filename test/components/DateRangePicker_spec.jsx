@@ -9,13 +9,57 @@ import DateRangePicker, { PureDateRangePicker } from '../../src/components/DateR
 
 import DateRangePickerInputController from '../../src/components/DateRangePickerInputController';
 import DayPickerRangeController from '../../src/components/DayPickerRangeController';
+import DayPicker from '../../src/components/DayPicker';
 
 import {
   HORIZONTAL_ORIENTATION,
   START_DATE,
 } from '../../src/constants';
 
-const describeIfWindow = typeof document === 'undefined' ? describe.skip : describe;
+import describeIfWindow from '../_helpers/describeIfWindow';
+
+class DateRangePickerWrapper extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      focusedInput: null,
+      startDate: null,
+      endDate: null,
+    };
+
+    this.onDatesChange = this.onDatesChange.bind(this);
+    this.onFocusChange = this.onFocusChange.bind(this);
+  }
+
+  onDatesChange({ startDate, endDate }) {
+    this.setState({ startDate, endDate });
+  }
+
+  onFocusChange(focusedInput) {
+    this.setState({ focusedInput });
+  }
+
+  render() {
+    const { focusedInput, startDate, endDate } = this.state;
+
+    return (
+      <div>
+        <DateRangePicker
+          {...this.props}
+          onDatesChange={this.onDatesChange}
+          onFocusChange={this.onFocusChange}
+          focusedInput={focusedInput}
+          startDate={startDate}
+          endDate={endDate}
+        />
+        <button type="button">
+          Dummy button
+        </button>
+      </div>
+    );
+  }
+}
 
 const requiredProps = {
   onDatesChange: () => {},
@@ -107,6 +151,23 @@ describe('DateRangePicker', () => {
           )).dive();
           expect(wrapper.find(Portal)).to.have.length(0);
         });
+      });
+    });
+
+    describe('props.isDayBlocked is defined', () => {
+      it('should pass props.isDayBlocked to <DateRangePickerInputController>', () => {
+        const isDayBlocked = sinon.stub();
+        const wrapper = shallow((
+          <DateRangePicker {...requiredProps} isDayBlocked={isDayBlocked} />
+        )).dive();
+        expect(wrapper.find(DateRangePickerInputController).prop('isDayBlocked')).to.equal(isDayBlocked);
+      });
+
+      it('is a noop when omitted', () => {
+        const wrapper = shallow((
+          <DateRangePicker {...requiredProps} />
+        )).dive();
+        expect(wrapper.find(DateRangePickerInputController).prop('isDayBlocked')).not.to.throw();
       });
     });
 
@@ -522,6 +583,23 @@ describe('DateRangePicker', () => {
     });
   });
 
+  describeIfWindow('day picker position', () => {
+    it('day picker is opened after the end date input when end date input is focused', () => {
+      const wrapper = mount((
+        <DateRangePickerWrapper
+          startDateId="startDate"
+          endDateId="endDate"
+        />
+      ));
+      expect(wrapper.find(DayPicker)).to.have.length(0);
+      wrapper.find('input').at(0).simulate('focus'); // when focusing on start date the day picker is rendered after the start date input
+      expect(wrapper.find('DateRangePickerInput').children().childAt(1).find(DayPicker)).to.have.length(1);
+      wrapper.find('input').at(1).simulate('focus'); // when focusing on end date the day picker is rendered after the end date input
+      expect(wrapper.find('DateRangePickerInput').children().childAt(1).find(DayPicker)).to.have.length(0);
+      expect(wrapper.find('DateRangePickerInput').children().childAt(3).find(DayPicker)).to.have.length(1);
+    });
+  });
+
   describeIfWindow('#onDayPickerBlur', () => {
     it('sets state.isDateRangePickerInputFocused to true', () => {
       const wrapper = shallow((
@@ -582,7 +660,6 @@ describe('DateRangePicker', () => {
       wrapper.instance().onDayPickerFocusOut({ key: 'Tab', shiftKey: false, target });
       expect(onOutsideClick.callCount).to.equal(1);
     });
-
 
     it('tabbing within itself does not behave as an outside click', () => {
       const target = sinon.stub();
@@ -770,5 +847,13 @@ describe('DateRangePicker', () => {
         expect(wrapper.find(DayPickerRangeController).props().maxDate).to.equal(maxDate);
       });
     });
+  });
+
+  it('should pass noBorder as noBorder to <DayPickerRangeController>', () => {
+    const wrapper = shallow((
+      <DateRangePicker {...requiredProps} focusedInput={START_DATE} noBorder />
+    )).dive();
+
+    expect(wrapper.find(DayPickerRangeController).prop('noBorder')).to.equal(true);
   });
 });

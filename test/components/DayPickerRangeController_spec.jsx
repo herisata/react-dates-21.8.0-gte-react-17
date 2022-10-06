@@ -1651,7 +1651,6 @@ describe('DayPickerRangeController', () => {
           });
         });
 
-
         describe('start date has changed, and end date or previous end date are falsey', () => {
           it('calls deleteModifier with `selected-start-no-selected-end`', () => {
             const deleteModifierSpy = sinon.spy(DayPickerRangeController.prototype, 'deleteModifier');
@@ -3776,6 +3775,21 @@ describe('DayPickerRangeController', () => {
       });
     });
 
+    it('time is a noon', () => {
+      sinon.stub(DayPickerRangeController.prototype, 'isBlocked').returns(false);
+      const wrapper = shallow((
+        <DayPickerRangeController
+          focusedInput={null}
+          startDate={null}
+          endDate={null}
+          onFocusChange={sinon.stub()}
+          onDatesChange={sinon.stub()}
+        />
+      ));
+      const firstFocusableDay = wrapper.instance().getFirstFocusableDay(today);
+      expect(firstFocusableDay.hours()).to.equal(12);
+    });
+
     describe('desired day is blocked', () => {
       it('returns next unblocked visible day after desired day if exists', () => {
         const isBlockedStub = sinon.stub(DayPickerRangeController.prototype, 'isBlocked');
@@ -4928,6 +4942,19 @@ describe('DayPickerRangeController', () => {
 
       it('returns true if same day as firstDayOfWeek prop', () => {
         const firstDayOfWeek = 3;
+        const wrapper = shallow(<DayPickerRangeController firstDayOfWeek={firstDayOfWeek} />);
+        expect(wrapper.instance().isFirstDayOfWeek(moment().startOf('week').day(firstDayOfWeek))).to.equal(true);
+      });
+
+      it('returns true if first day of week and prop are both zero', () => {
+        const firstDayOfWeek = 0;
+        const wrapper = shallow(<DayPickerRangeController firstDayOfWeek={firstDayOfWeek} />);
+        expect(wrapper.instance().isFirstDayOfWeek(moment().startOf('week').day(firstDayOfWeek))).to.equal(true);
+      });
+
+      it('returns true if first day of week is not zero, and prop is zero', () => {
+        sinon.stub(moment.localeData(), 'firstDayOfWeek').returns(1);
+        const firstDayOfWeek = 0;
         const wrapper = shallow(<DayPickerRangeController firstDayOfWeek={firstDayOfWeek} />);
         expect(wrapper.instance().isFirstDayOfWeek(moment().startOf('week').day(firstDayOfWeek))).to.equal(true);
       });
