@@ -1,7 +1,7 @@
 # Install
 
 ```sh
-$ npm install react-dates-gte-react-17-21.8.0-version-fixed
+$ npm install react-dates-gte-react-17-21.8.0-updated
 ```
 
 # react-dates <sup>[![Version Badge][npm-version-svg]][package-url]</sup>

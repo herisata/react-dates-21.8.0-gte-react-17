@@ -4,6 +4,9 @@
 - []  ([#](https://github.com/react-dates/react-dates/pull/))
 -->
 
+## 21.8.1
+- [new][fix] Added all new updates and bug fixes from master branch on 'react-dates/react-dates' original repo
+
 ## 21.8.0
 
 - [new] Add option to allow days violating min nights to be clicked ([#1913](https://github.com/react-dates/react-dates/pull/1913))
